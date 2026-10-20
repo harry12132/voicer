@@ -10,7 +10,7 @@ function readMessage() {
   return {
     title: p.get('title') || 'A message for you',
     subtitle: p.get('subtitle') || 'A little moment, saved in sound.',
-    src: p.get('src') || '/recordings/voice.mp3',
+    src: p.get('src') || 'https://www.dropbox.com/scl/fi/aivprfzijx5ewv2wa3u3d/AUDIO-2026-10-21-10-04-08.mp3?rlkey=efiirrb39xg0b1idlhwcwvxaq&raw=1',
     artwork: p.get('artwork') || '',
   }
 }
