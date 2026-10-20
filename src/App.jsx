@@ -41,6 +41,18 @@ export default function App() {
   const [copied, setCopied] = useState(false)
   const progress = duration > 0 ? current / duration : 0
 
+  // NFC landing-page behaviour: try to start immediately and keep the message looping.
+  // Mobile browsers may block audible autoplay; the existing Play button remains the fallback.
+  useEffect(() => {
+    const audio = audioRef.current
+    if (!audio) return
+    audio.loop = true
+    const attemptAutoplay = () => { audio.play().catch(() => {}) }
+    if (audio.readyState >= 2) attemptAutoplay()
+    else audio.addEventListener('canplay', attemptAutoplay, { once: true })
+    return () => audio.removeEventListener('canplay', attemptAutoplay)
+  }, [src])
+
   useEffect(() => {
     const a = audioRef.current
     if (!a) return
@@ -145,7 +157,7 @@ export default function App() {
         <button className="save-button" aria-label="Share or save this message" onClick={() => setModal('share')}><Heart size={21} /></button>
       </div>
 
-      <audio ref={audioRef} src={src} preload="metadata" playsInline />
+      <audio ref={audioRef} src={src} preload="auto" playsInline autoPlay loop />
       <div className="timeline"><Waveform playing={playing} progress={progress} onSeek={seek} /><div className="time-row"><span>{formatTime(current)}</span><span>{duration ? '−' + formatTime(Math.max(0, duration - current)) : '−0:00'}</span></div></div>
 
       {error && <div className="error-message" role="status"><span>{error}</span><button onClick={() => setError('')} aria-label="Dismiss error"><X size={15} /></button></div>}
