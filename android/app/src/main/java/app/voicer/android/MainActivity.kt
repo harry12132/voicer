@@ -2,7 +2,6 @@ package app.voicer.android
 
 import android.app.Activity
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.LinearLayout
@@ -11,9 +10,11 @@ import android.view.Gravity
 import android.graphics.Color
 import android.view.ViewGroup
 import android.widget.Toast
+import java.util.concurrent.Executors
 
 class MainActivity : Activity() {
     private lateinit var status: TextView
+    private val executor = Executors.newSingleThreadExecutor()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +42,7 @@ class MainActivity : Activity() {
             gravity = Gravity.CENTER
         }
         status = TextView(this).apply {
-            text = "Scan a Voicer NFC tag to play its recording on repeat."
+            text = "Scan a Voicer NFC tag to download and play its recording on repeat."
             textSize = 16f
             setTextColor(Color.DKGRAY)
             gravity = Gravity.CENTER
@@ -72,12 +73,24 @@ class MainActivity : Activity() {
         }
 
         val title = uri.getQueryParameter("title")?.takeIf { it.isNotBlank() } ?: "Voicer recording"
+        status.text = "Downloading recording…"
         val serviceIntent = Intent(this, PlaybackService::class.java).apply {
             action = PlaybackService.ACTION_PLAY
             putExtra(PlaybackService.EXTRA_SOURCE, source)
             putExtra(PlaybackService.EXTRA_TITLE, title)
         }
-        startForegroundService(serviceIntent)
-        status.text = "Playing on repeat: $title"
+        try {
+            startForegroundService(serviceIntent)
+        } catch (e: Exception) {
+            status.text = "Couldn't start playback: ${e.localizedMessage ?: "unknown error"}"
+            Toast.makeText(this, status.text, Toast.LENGTH_LONG).show()
+            return
+        }
+        status.text = "Downloading or loading saved recording: $title"
+    }
+
+    override fun onDestroy() {
+        executor.shutdown()
+        super.onDestroy()
     }
 }
